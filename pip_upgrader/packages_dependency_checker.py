@@ -17,7 +17,7 @@ class PackagesDependencyChecker(object):
             if not pkg['upgrade_available']:
                 continue
 
-            msg = "{} is stale, current: {} latest is: {} | ".format(
+            msg = "{} is stale, current: {} latest is: {}".format(
                 pkg_name, current.base_version, latest.base_version)
 
             l_release = latest.release
@@ -41,15 +41,17 @@ class PackagesDependencyChecker(object):
 
             if l_major > c_major and self.throw_on == "major":
                 found_stale_packages = True
-                print(msg + "You're a major version behind!")
+                print(msg + "| You're a major version behind!")
 
             elif l_minor > c_minor and self.throw_on == "minor":
                 found_stale_packages = True
-                print(msg + "You're a minor version behind!")
+                print(msg + "| You're a minor version behind!")
 
             elif l_patch > c_patch and self.throw_on == "patch":
                 found_stale_packages = True
-                print(msg + "You're a patch version behind!")
+                print(msg + "| You're a patch version behind!")
+            else:
+                print(msg)
 
         if self.throw_on and found_stale_packages:
             raise StaleDependenciesError("You got stale packages")
