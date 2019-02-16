@@ -2,7 +2,7 @@
 pip-upgrade
 
 Usage:
-  pip-upgrade [<requirements_file>] ... [--prerelease] [-p=<package>...] [--dry-run] [--skip-virtualenv-check] [--skip-package-installation] [--use-default-index]
+  pip-upgrade [<requirements_file>] ... [--prerelease] [-p=<package>...] [--dry-run] [--skip-virtualenv-check] [--skip-package-installation] [--use-default-index] [--verify-dependencies] [--throw-on=<NAME>]
 
 Arguments:
     requirements_file             The requirement FILE, or WILDCARD PATH to multiple files.
@@ -12,6 +12,8 @@ Arguments:
     --skip-package-installation   Only upgrade the version in requirements files, don't install the new package.
     --skip-virtualenv-check       Disable virtualenv check. Allows installing the new packages outside the virtualenv.
     --use-default-index           Skip searching for custom index-url in pip configuration file(s).
+    --verify-dependencies         Checks pinned dependencies against latest versions on the selected Package Index. [default: false]
+    --throw-on=NAME               Used with verify-dependencies to throw exception incase of stale dependencies. [default: major]
 
 Examples:
   pip-upgrade             # auto discovers requirements file
@@ -30,9 +32,14 @@ Help:
 from __future__ import print_function, unicode_literals
 from colorclass import Windows, Color
 from docopt import docopt
+import sys
 
 from pip_upgrader import __version__ as VERSION
 from pip_upgrader.packages_detector import PackagesDetector
+from pip_upgrader.packages_dependency_checker import (
+    PackagesDependencyChecker,
+    StaleDependenciesError
+)
 from pip_upgrader.packages_interactive_selector import PackageInteractiveSelector
 from pip_upgrader.packages_status_detector import PackagesStatusDetector
 from pip_upgrader.packages_upgrader import PackagesUpgrader
@@ -47,6 +54,7 @@ def get_options():
 def main():
     """ Main CLI entrypoint. """
     options = get_options()
+
     Windows.enable(auto_colors=True, reset_atexit=True)
 
     try:
@@ -69,6 +77,12 @@ def main():
         packages_status_map = PackagesStatusDetector(
             packages, options.get('--use-default-index')).detect_available_upgrades(options)
 
+        # New.
+        PackagesDependencyChecker(options).check_dependencies(packages_status_map)
+
+        if options.get('--verify-dependencies'):
+            return
+
         # 4. [optionally], show interactive screen when user can choose which packages to upgrade
         selected_packages = PackageInteractiveSelector(packages_status_map, options).get_packages()
 
@@ -79,6 +93,9 @@ def main():
                     '{}{{/autogreen}}'.format(','.join([package['name'] for package in upgraded_packages]))))
         if options['--dry-run']:
             print(Color('{automagenta}Actually, no, because this was a simulation using --dry-run{/automagenta}'))
+
+    except StaleDependenciesError:
+        sys.exit(1)
 
     except KeyboardInterrupt:  # pragma: nocover
         print(Color('\n{autored}Upgrade interrupted.{/autored}'))
