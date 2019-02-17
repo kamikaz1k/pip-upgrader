@@ -5,7 +5,7 @@ class StaleDependenciesError(Exception):
 class PackagesDependencyChecker(object):
 
     def __init__(self, options):
-        self.throw_on = options.get('--throw-on', "major")
+        self.throw_on = options.get('--throw-on') or ""
 
     def check_dependencies(self, packages_status_map):
 
