@@ -6,6 +6,7 @@ class PackagesDependencyChecker(object):
 
     def __init__(self, options):
         self.throw_on = options.get('--throw-on') or ""
+        print("Your throw selection is:", self.throw_on)
 
     def check_dependencies(self, packages_status_map):
 
