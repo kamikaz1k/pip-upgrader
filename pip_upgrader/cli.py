@@ -12,8 +12,8 @@ Arguments:
     --skip-package-installation   Only upgrade the version in requirements files, don't install the new package.
     --skip-virtualenv-check       Disable virtualenv check. Allows installing the new packages outside the virtualenv.
     --use-default-index           Skip searching for custom index-url in pip configuration file(s).
-    --verify-dependencies         Checks pinned dependencies against latest versions on the selected Package Index. [default: false]
-    --throw-on=NAME               Used with verify-dependencies to throw exception incase of stale dependencies. [default: major]
+    --verify-dependencies         Checks pinned dependencies against latest versions on the selected Package Index. [default: False]
+    --throw-on=NAME               Used with verify-dependencies to throw exception incase of stale dependencies.
 
 Examples:
   pip-upgrade             # auto discovers requirements file
@@ -77,10 +77,8 @@ def main():
         packages_status_map = PackagesStatusDetector(
             packages, options.get('--use-default-index')).detect_available_upgrades(options)
 
-        # New.
-        PackagesDependencyChecker(options).check_dependencies(packages_status_map)
-
         if options.get('--verify-dependencies'):
+            PackagesDependencyChecker(options).check_dependencies(packages_status_map)
             return
 
         # 4. [optionally], show interactive screen when user can choose which packages to upgrade
@@ -94,8 +92,8 @@ def main():
         if options['--dry-run']:
             print(Color('{automagenta}Actually, no, because this was a simulation using --dry-run{/automagenta}'))
 
-    except StaleDependenciesError:
-        sys.exit(1)
-
     except KeyboardInterrupt:  # pragma: nocover
         print(Color('\n{autored}Upgrade interrupted.{/autored}'))
+
+    except StaleDependenciesError:
+        sys.exit(1)
